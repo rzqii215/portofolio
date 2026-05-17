@@ -18,6 +18,14 @@
     >
 
     <style>
+        .ep-mobile-toggle {
+            display: none;
+        }
+
+        .ep-mobile-button {
+            display: none;
+        }
+
         .landing-hero-grid {
             display: grid;
             grid-template-columns: 1fr 0.96fr;
@@ -315,6 +323,124 @@
             }
         }
 
+        @media (max-width: 760px) {
+            .ep-topbar {
+                position: relative !important;
+                top: auto !important;
+                z-index: 100;
+            }
+
+            .ep-topbar .ep-navbar {
+                position: relative;
+                min-height: 72px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 14px;
+                padding-left: 66px;
+                box-sizing: border-box;
+            }
+
+            .ep-mobile-button {
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 50px;
+                height: 50px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.10);
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                gap: 6px;
+                cursor: pointer;
+                box-shadow: 0 14px 34px rgba(2, 6, 23, 0.18);
+                flex-shrink: 0;
+                margin: 0;
+            }
+
+            .ep-topbar .ep-brand {
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .ep-topbar .ep-brand-text {
+                min-width: 0;
+            }
+
+            .ep-topbar .ep-brand-text strong {
+                max-width: 180px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .ep-mobile-button span {
+                width: 23px;
+                height: 2.5px;
+                border-radius: 999px;
+                background: #ffffff;
+                display: block;
+                transition: 0.18s ease;
+            }
+
+            .ep-mobile-toggle:checked + .ep-mobile-button span:nth-child(1) {
+                transform: translateY(8.5px) rotate(45deg);
+            }
+
+            .ep-mobile-toggle:checked + .ep-mobile-button span:nth-child(2) {
+                opacity: 0;
+            }
+
+            .ep-mobile-toggle:checked + .ep-mobile-button span:nth-child(3) {
+                transform: translateY(-8.5px) rotate(-45deg);
+            }
+
+            .ep-topbar .ep-nav {
+                position: absolute;
+                left: 0;
+                right: auto;
+                top: calc(100% + 12px);
+                z-index: 99;
+                width: min(290px, calc(100vw - 28px));
+                display: none !important;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 14px;
+                border-radius: 26px;
+                background:
+                    radial-gradient(circle at top right, rgba(37, 99, 235, 0.35), transparent 190px),
+                    rgba(10, 20, 44, 0.98);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                box-shadow: 0 26px 70px rgba(2, 6, 23, 0.36);
+                backdrop-filter: blur(18px);
+            }
+
+            .ep-mobile-toggle:checked ~ .ep-nav {
+                display: grid !important;
+            }
+
+            .ep-topbar .ep-nav .ep-nav-link {
+                width: 100%;
+                min-height: 50px;
+                border-radius: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                box-sizing: border-box;
+            }
+
+            .ep-topbar .ep-nav .ep-nav-link.active {
+                background: #2563eb;
+                color: #ffffff;
+                box-shadow: 0 14px 34px rgba(37, 99, 235, 0.28);
+            }
+        }
+
         @media (max-width: 680px) {
             .feature-card {
                 grid-template-columns: 1fr;
@@ -348,6 +474,14 @@
                         </span>
                     </a>
 
+                    <input type="checkbox" id="ep-mobile-menu" class="ep-mobile-toggle">
+
+                    <label for="ep-mobile-menu" class="ep-mobile-button" aria-label="Buka navigasi">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </label>
+
                     <div class="ep-nav">
                         <a href="/" class="ep-nav-link active">
                             Beranda
@@ -358,7 +492,7 @@
                         </a>
 
                         @auth
-                            <a href="{{ $dashboardRoute }}" class="ep-nav-link active">
+                            <a href="{{ $dashboardRoute }}" class="ep-nav-link">
                                 Dashboard
                             </a>
                         @else
@@ -366,7 +500,7 @@
                                 Login
                             </a>
 
-                            <a href="{{ $registerRoute }}" class="ep-nav-link active">
+                            <a href="{{ $registerRoute }}" class="ep-nav-link">
                                 Register
                             </a>
                         @endauth
