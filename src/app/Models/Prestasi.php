@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\KategoriPrestasi;
+use App\Models\RiwayatStatusPrestasi;
+use App\Models\User;
+use App\Models\ValidasiPrestasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Rupadana\ApiService\Contracts\HasAllowedFields;
+use Rupadana\ApiService\Contracts\HasAllowedFilters;
+use Rupadana\ApiService\Contracts\HasAllowedSorts;
 
-class Prestasi extends Model
+class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, HasAllowedSorts
 {
     use HasFactory;
 
@@ -21,17 +28,76 @@ class Prestasi extends Model
         'tanggal_prestasi',
         'deskripsi',
         'status',
+        'file_bukti',
         'ditampilkan',
-        'catatan_validasi',
-        'divalidasi_oleh',
-        'divalidasi_at',
+        'ditampilkan_di_public',
+        'catatan_admin',
+        'validated_by',
+        'validated_at',
     ];
 
     protected $casts = [
         'tanggal_prestasi' => 'date',
+        'validated_at' => 'datetime',
         'ditampilkan' => 'boolean',
-        'divalidasi_at' => 'datetime',
+        'ditampilkan_di_public' => 'boolean',
     ];
+
+    public static function getAllowedFields(): array
+    {
+        return [
+            'id',
+            'user_id',
+            'kategori_prestasi_id',
+            'judul',
+            'tingkat',
+            'penyelenggara',
+            'jenis_prestasi',
+            'tanggal_prestasi',
+            'deskripsi',
+            'status',
+            'file_bukti',
+            'ditampilkan',
+            'ditampilkan_di_public',
+            'catatan_admin',
+            'validated_by',
+            'validated_at',
+            'created_at',
+            'updated_at',
+        ];
+    }
+
+    public static function getAllowedSorts(): array
+    {
+        return [
+            'id',
+            'judul',
+            'tingkat',
+            'penyelenggara',
+            'jenis_prestasi',
+            'tanggal_prestasi',
+            'status',
+            'created_at',
+            'updated_at',
+        ];
+    }
+
+    public static function getAllowedFilters(): array
+    {
+        return [
+            'id',
+            'user_id',
+            'kategori_prestasi_id',
+            'judul',
+            'tingkat',
+            'penyelenggara',
+            'jenis_prestasi',
+            'status',
+            'ditampilkan',
+            'ditampilkan_di_public',
+            'created_at',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -43,75 +109,13 @@ class Prestasi extends Model
         return $this->belongsTo(KategoriPrestasi::class);
     }
 
-    public function filePrestasis(): HasMany
-    {
-        return $this->hasMany(FilePrestasi::class);
-    }
-
-    public function validasiPrestasis(): HasMany
-    {
-        return $this->hasMany(ValidasiPrestasi::class);
-    }
-
     public function riwayatStatusPrestasis(): HasMany
     {
         return $this->hasMany(RiwayatStatusPrestasi::class);
     }
 
-    public function validator(): BelongsTo
+    public function validasiPrestasis(): HasMany
     {
-        return $this->belongsTo(User::class, 'divalidasi_oleh');
-    }
-
-    public function isLockedForMahasiswa(): bool
-    {
-        return in_array($this->status, [
-            'submitted',
-            'under_review',
-            'approved',
-            'published',
-            'rejected',
-        ], true);
-    }
-
-    public function canBeModifiedByMahasiswa(): bool
-    {
-        return ! $this->isLockedForMahasiswa();
-    }
-
-    public function isApproved(): bool
-    {
-        return in_array($this->status, [
-            'approved',
-            'published',
-        ], true);
-    }
-
-    public function isPublicVisible(): bool
-    {
-        return $this->isApproved() && (bool) $this->ditampilkan;
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return match ($this->status) {
-            'submitted' => 'Submitted',
-            'under_review' => 'Under Review',
-            'approved' => 'Approved',
-            'published' => 'Published',
-            'rejected' => 'Rejected',
-            default => ucfirst((string) $this->status),
-        };
-    }
-
-    public function getStatusColorAttribute(): string
-    {
-        return match ($this->status) {
-            'submitted' => 'warning',
-            'under_review' => 'info',
-            'approved', 'published' => 'success',
-            'rejected' => 'danger',
-            default => 'gray',
-        };
+        return $this->hasMany(ValidasiPrestasi::class);
     }
 }
