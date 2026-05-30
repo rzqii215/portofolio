@@ -16,7 +16,7 @@ class FilePrestasiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'File Prestasi';
 

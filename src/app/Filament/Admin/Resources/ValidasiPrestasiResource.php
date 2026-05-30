@@ -16,7 +16,7 @@ class ValidasiPrestasiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'Validasi Prestasi';
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\FilePrestasi;
 use App\Models\KategoriPrestasi;
 use App\Models\RiwayatStatusPrestasi;
 use App\Models\User;
@@ -22,25 +23,25 @@ class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, Has
         'user_id',
         'kategori_prestasi_id',
         'judul',
-        'tingkat',
+        'deskripsi',
         'penyelenggara',
+        'tingkat',
         'jenis_prestasi',
         'tanggal_prestasi',
-        'deskripsi',
         'status',
-        'file_bukti',
         'ditampilkan',
-        'ditampilkan_di_public',
+        'diajukan_pada',
+        'disetujui_pada',
+        'ditolak_pada',
         'catatan_admin',
-        'validated_by',
-        'validated_at',
     ];
 
     protected $casts = [
         'tanggal_prestasi' => 'date',
-        'validated_at' => 'datetime',
         'ditampilkan' => 'boolean',
-        'ditampilkan_di_public' => 'boolean',
+        'diajukan_pada' => 'datetime',
+        'disetujui_pada' => 'datetime',
+        'ditolak_pada' => 'datetime',
     ];
 
     public static function getAllowedFields(): array
@@ -50,18 +51,17 @@ class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, Has
             'user_id',
             'kategori_prestasi_id',
             'judul',
-            'tingkat',
+            'deskripsi',
             'penyelenggara',
+            'tingkat',
             'jenis_prestasi',
             'tanggal_prestasi',
-            'deskripsi',
             'status',
-            'file_bukti',
             'ditampilkan',
-            'ditampilkan_di_public',
+            'diajukan_pada',
+            'disetujui_pada',
+            'ditolak_pada',
             'catatan_admin',
-            'validated_by',
-            'validated_at',
             'created_at',
             'updated_at',
         ];
@@ -72,11 +72,12 @@ class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, Has
         return [
             'id',
             'judul',
-            'tingkat',
             'penyelenggara',
+            'tingkat',
             'jenis_prestasi',
             'tanggal_prestasi',
             'status',
+            'ditampilkan',
             'created_at',
             'updated_at',
         ];
@@ -89,12 +90,11 @@ class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, Has
             'user_id',
             'kategori_prestasi_id',
             'judul',
-            'tingkat',
             'penyelenggara',
+            'tingkat',
             'jenis_prestasi',
             'status',
             'ditampilkan',
-            'ditampilkan_di_public',
             'created_at',
         ];
     }
@@ -109,13 +109,18 @@ class Prestasi extends Model implements HasAllowedFields, HasAllowedFilters, Has
         return $this->belongsTo(KategoriPrestasi::class);
     }
 
-    public function riwayatStatusPrestasis(): HasMany
+    public function filePrestasis(): HasMany
     {
-        return $this->hasMany(RiwayatStatusPrestasi::class);
+        return $this->hasMany(FilePrestasi::class);
     }
 
     public function validasiPrestasis(): HasMany
     {
         return $this->hasMany(ValidasiPrestasi::class);
+    }
+
+    public function riwayatStatusPrestasis(): HasMany
+    {
+        return $this->hasMany(RiwayatStatusPrestasi::class);
     }
 }

@@ -4,14 +4,13 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\PrestasiResource\Pages;
 use App\Models\Prestasi;
-use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 
 class PrestasiResource extends Resource
 {
@@ -19,7 +18,7 @@ class PrestasiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-trophy';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'Prestasi Mahasiswa';
 
@@ -33,19 +32,14 @@ class PrestasiResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Data Mahasiswa')
+                Forms\Components\Section::make('Data Prestasi')
+                    ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label('Mahasiswa')
-                            ->options(function (): array {
-                                return User::query()
-                                    ->whereHas('roles', function ($query): void {
-                                        $query->where('name', 'mahasiswa');
-                                    })
-                                    ->pluck('name', 'id')
-                                    ->toArray();
-                            })
+                            ->relationship('user', 'name')
                             ->searchable()
+                            ->preload()
                             ->required(),
 
                         Forms\Components\Select::make('kategori_prestasi_id')
@@ -54,153 +48,153 @@ class PrestasiResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required(),
-                    ])
-                    ->columns(2),
 
-                Forms\Components\Section::make('Data Prestasi')
-                    ->schema([
                         Forms\Components\TextInput::make('judul')
                             ->label('Judul Prestasi')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Textarea::make('deskripsi')
+                            ->label('Deskripsi')
+                            ->rows(4)
+                            ->required()
+                            ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('penyelenggara')
                             ->label('Penyelenggara')
+                            ->required()
                             ->maxLength(255),
 
                         Forms\Components\Select::make('tingkat')
-                            ->label('Tingkat Prestasi')
+                            ->label('Tingkat')
                             ->options([
                                 'kampus' => 'Kampus',
-                                'lokal' => 'Lokal',
                                 'regional' => 'Regional',
                                 'nasional' => 'Nasional',
                                 'internasional' => 'Internasional',
                             ])
-                            ->native(false)
                             ->required(),
 
                         Forms\Components\TextInput::make('jenis_prestasi')
                             ->label('Jenis Prestasi')
-                            ->placeholder('Contoh: Lomba, Sertifikasi, Organisasi, Project')
+                            ->required()
                             ->maxLength(255),
 
                         Forms\Components\DatePicker::make('tanggal_prestasi')
                             ->label('Tanggal Prestasi')
+                            ->required()
                             ->native(false),
+                    ]),
 
-                        Forms\Components\Textarea::make('deskripsi')
-                            ->label('Deskripsi Prestasi')
-                            ->rows(5)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-
-                Forms\Components\Section::make('Status dan Publikasi')
+                Forms\Components\Section::make('Status Prestasi')
+                    ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('status')
                             ->label('Status')
                             ->options([
-                                'draft' => 'Draft',
                                 'submitted' => 'Submitted',
                                 'under_review' => 'Under Review',
                                 'approved' => 'Approved',
                                 'rejected' => 'Rejected',
-                                'published' => 'Published',
                             ])
-                            ->native(false)
                             ->default('submitted')
                             ->required(),
 
                         Forms\Components\Toggle::make('ditampilkan')
-                            ->label('Tampilkan di Portofolio Public')
+                            ->label('Tampilkan ke Public')
                             ->default(false),
 
                         Forms\Components\DateTimePicker::make('diajukan_pada')
                             ->label('Diajukan Pada')
+                            ->seconds(false)
                             ->native(false)
-                            ->seconds(false),
+                            ->default(now()),
 
                         Forms\Components\DateTimePicker::make('disetujui_pada')
                             ->label('Disetujui Pada')
-                            ->native(false)
-                            ->seconds(false),
+                            ->seconds(false)
+                            ->native(false),
 
                         Forms\Components\DateTimePicker::make('ditolak_pada')
                             ->label('Ditolak Pada')
-                            ->native(false)
-                            ->seconds(false),
-                    ])
-                    ->columns(2),
+                            ->seconds(false)
+                            ->native(false),
+
+                        Forms\Components\Textarea::make('catatan_admin')
+                            ->label('Catatan Admin')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('kategoriPrestasi.nama')
                     ->label('Kategori')
                     ->badge()
+                    ->color('primary')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('judul')
                     ->label('Judul Prestasi')
                     ->searchable()
-                    ->limit(45)
-                    ->wrap(),
+                    ->sortable()
+                    ->wrap()
+                    ->limit(45),
 
                 Tables\Columns\TextColumn::make('tingkat')
                     ->label('Tingkat')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'kampus' => 'Kampus',
-                        'lokal' => 'Lokal',
                         'regional' => 'Regional',
                         'nasional' => 'Nasional',
                         'internasional' => 'Internasional',
-                        default => '-',
+                        default => ucfirst((string) $state),
                     })
                     ->color(fn (?string $state): string => match ($state) {
                         'kampus' => 'gray',
-                        'lokal' => 'info',
                         'regional' => 'warning',
                         'nasional' => 'success',
                         'internasional' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'draft' => 'Draft',
                         'submitted' => 'Submitted',
-                        'under_review' => 'Under Review',
+                        'under_review' => 'Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
-                        'published' => 'Published',
-                        default => '-',
+                        default => ucfirst((string) $state),
                     })
                     ->color(fn (?string $state): string => match ($state) {
-                        'draft' => 'gray',
                         'submitted' => 'warning',
                         'under_review' => 'info',
                         'approved' => 'success',
                         'rejected' => 'danger',
-                        'published' => 'primary',
                         default => 'gray',
-                    }),
+                    })
+                    ->sortable(),
 
                 Tables\Columns\IconColumn::make('ditampilkan')
                     ->label('Public')
-                    ->boolean(),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('tanggal_prestasi')
                     ->label('Tanggal')
@@ -210,91 +204,41 @@ class PrestasiResource extends Resource
                 Tables\Columns\TextColumn::make('diajukan_pada')
                     ->label('Diajukan')
                     ->dateTime('d M Y H:i')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('disetujui_pada')
-                    ->label('Disetujui')
-                    ->dateTime('d M Y H:i')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('ditolak_pada')
-                    ->label('Ditolak')
-                    ->dateTime('d M Y H:i')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()
+                    ->placeholder('-'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'draft' => 'Draft',
                         'submitted' => 'Submitted',
                         'under_review' => 'Under Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
-                        'published' => 'Published',
                     ]),
 
                 Tables\Filters\SelectFilter::make('tingkat')
                     ->label('Tingkat')
                     ->options([
                         'kampus' => 'Kampus',
-                        'lokal' => 'Lokal',
                         'regional' => 'Regional',
                         'nasional' => 'Nasional',
                         'internasional' => 'Internasional',
                     ]),
 
-                Tables\Filters\SelectFilter::make('kategori_prestasi_id')
-                    ->label('Kategori')
-                    ->relationship('kategoriPrestasi', 'nama'),
-
                 Tables\Filters\TernaryFilter::make('ditampilkan')
-                    ->label('Tampil di Portofolio')
-                    ->trueLabel('Ditampilkan')
-                    ->falseLabel('Tidak Ditampilkan')
-                    ->native(false),
+                    ->label('Public'),
             ])
             ->actions([
-                Tables\Actions\Action::make('review')
-                    ->label('Review')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->visible(fn (Prestasi $record): bool => $record->status === 'submitted')
-                    ->requiresConfirmation()
-                    ->modalHeading('Review Prestasi')
-                    ->modalDescription('Status prestasi akan diubah menjadi Under Review.')
-                    ->action(function (Prestasi $record): void {
-                        $statusLama = $record->status;
-
-                        $record->update([
-                            'status' => 'under_review',
-                            'ditampilkan' => false,
-                        ]);
-
-                        $record->riwayatStatusPrestasis()->create([
-                            'diubah_oleh' => Auth::id(),
-                            'status_lama' => $statusLama,
-                            'status_baru' => 'under_review',
-                            'catatan' => 'Prestasi sedang ditinjau oleh admin.',
-                        ]);
-
-                        Notification::make()
-                            ->title('Status prestasi berhasil diubah menjadi Under Review')
-                            ->success()
-                            ->send();
-                    }),
-
                 Tables\Actions\Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (Prestasi $record): bool => ! in_array($record->status, ['approved', 'published'], true))
                     ->requiresConfirmation()
-                    ->modalHeading('Setujui Prestasi')
-                    ->modalDescription('Prestasi akan disetujui dan otomatis tampil di portofolio public.')
+                    ->modalHeading('Approve Prestasi')
+                    ->modalDescription('Prestasi akan disetujui dan dapat ditampilkan pada halaman public.')
+                    ->visible(fn (Prestasi $record): bool => in_array($record->status, ['submitted', 'under_review'], true))
                     ->action(function (Prestasi $record): void {
-                        $statusLama = $record->status;
-
                         $record->update([
                             'status' => 'approved',
                             'ditampilkan' => true,
@@ -302,22 +246,8 @@ class PrestasiResource extends Resource
                             'ditolak_pada' => null,
                         ]);
 
-                        $record->validasiPrestasis()->create([
-                            'validator_id' => Auth::id(),
-                            'status' => 'approved',
-                            'catatan' => 'Prestasi disetujui oleh admin.',
-                            'divalidasi_pada' => now(),
-                        ]);
-
-                        $record->riwayatStatusPrestasis()->create([
-                            'diubah_oleh' => Auth::id(),
-                            'status_lama' => $statusLama,
-                            'status_baru' => 'approved',
-                            'catatan' => 'Prestasi disetujui oleh admin.',
-                        ]);
-
                         Notification::make()
-                            ->title('Prestasi berhasil disetujui')
+                            ->title('Prestasi berhasil di-approve')
                             ->success()
                             ->send();
                     }),
@@ -326,19 +256,11 @@ class PrestasiResource extends Resource
                     ->label('Reject')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (Prestasi $record): bool => $record->status !== 'rejected')
-                    ->form([
-                        Forms\Components\Textarea::make('catatan')
-                            ->label('Alasan Penolakan')
-                            ->placeholder('Tuliskan alasan kenapa prestasi ditolak.')
-                            ->required()
-                            ->rows(4),
-                    ])
-                    ->modalHeading('Tolak Prestasi')
-                    ->modalDescription('Prestasi akan ditolak dan tidak ditampilkan di portofolio public.')
-                    ->action(function (Prestasi $record, array $data): void {
-                        $statusLama = $record->status;
-
+                    ->requiresConfirmation()
+                    ->modalHeading('Reject Prestasi')
+                    ->modalDescription('Prestasi akan ditolak dan tidak ditampilkan pada halaman public.')
+                    ->visible(fn (Prestasi $record): bool => in_array($record->status, ['submitted', 'under_review'], true))
+                    ->action(function (Prestasi $record): void {
                         $record->update([
                             'status' => 'rejected',
                             'ditampilkan' => false,
@@ -346,41 +268,27 @@ class PrestasiResource extends Resource
                             'disetujui_pada' => null,
                         ]);
 
-                        $record->validasiPrestasis()->create([
-                            'validator_id' => Auth::id(),
-                            'status' => 'rejected',
-                            'catatan' => $data['catatan'],
-                            'divalidasi_pada' => now(),
-                        ]);
-
-                        $record->riwayatStatusPrestasis()->create([
-                            'diubah_oleh' => Auth::id(),
-                            'status_lama' => $statusLama,
-                            'status_baru' => 'rejected',
-                            'catatan' => $data['catatan'],
-                        ]);
-
                         Notification::make()
-                            ->title('Prestasi berhasil ditolak')
+                            ->title('Prestasi berhasil di-reject')
                             ->danger()
                             ->send();
                     }),
 
                 Tables\Actions\Action::make('publish')
                     ->label('Publish')
-                    ->icon('heroicon-o-globe-alt')
-                    ->color('primary')
-                    ->visible(fn (Prestasi $record): bool => $record->status === 'approved' && ! $record->ditampilkan)
+                    ->icon('heroicon-o-eye')
+                    ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Publish Prestasi')
-                    ->modalDescription('Prestasi approved akan ditampilkan di portofolio public.')
+                    ->modalDescription('Prestasi akan ditampilkan pada portofolio public.')
+                    ->visible(fn (Prestasi $record): bool => $record->status === 'approved' && ! $record->ditampilkan)
                     ->action(function (Prestasi $record): void {
                         $record->update([
                             'ditampilkan' => true,
                         ]);
 
                         Notification::make()
-                            ->title('Prestasi berhasil ditampilkan di portofolio public')
+                            ->title('Prestasi berhasil dipublish')
                             ->success()
                             ->send();
                     }),
@@ -389,43 +297,52 @@ class PrestasiResource extends Resource
                     ->label('Unpublish')
                     ->icon('heroicon-o-eye-slash')
                     ->color('gray')
-                    ->visible(fn (Prestasi $record): bool => in_array($record->status, ['approved', 'published'], true) && $record->ditampilkan)
                     ->requiresConfirmation()
-                    ->modalHeading('Sembunyikan Prestasi')
+                    ->modalHeading('Unpublish Prestasi')
                     ->modalDescription('Prestasi akan disembunyikan dari portofolio public.')
+                    ->visible(fn (Prestasi $record): bool => $record->status === 'approved' && $record->ditampilkan)
                     ->action(function (Prestasi $record): void {
                         $record->update([
                             'ditampilkan' => false,
                         ]);
 
                         Notification::make()
-                            ->title('Prestasi berhasil disembunyikan dari portofolio public')
+                            ->title('Prestasi berhasil diunpublish')
                             ->success()
                             ->send();
                     }),
 
                 Tables\Actions\EditAction::make()
-                    ->label('Edit'),
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('primary'),
 
                 Tables\Actions\DeleteAction::make()
-                    ->label('Hapus'),
+                    ->label('Hapus')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->label('Hapus Terpilih'),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->emptyStateIcon('heroicon-o-trophy')
+            ->emptyStateHeading('Belum ada data prestasi')
+            ->emptyStateDescription('Data prestasi mahasiswa akan tampil di sini.')
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Prestasi'),
+            ]);
     }
 
-    public static function getRelations(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [
-            \App\Filament\Admin\Resources\PrestasiResource\RelationManagers\FilePrestasisRelationManager::class,
-            \App\Filament\Admin\Resources\PrestasiResource\RelationManagers\ValidasiPrestasisRelationManager::class,
-            \App\Filament\Admin\Resources\PrestasiResource\RelationManagers\RiwayatStatusPrestasisRelationManager::class,
-        ];
+        return parent::getEloquentQuery()
+            ->with([
+                'user',
+                'kategoriPrestasi',
+            ]);
     }
 
     public static function getPages(): array

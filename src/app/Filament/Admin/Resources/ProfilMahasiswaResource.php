@@ -16,7 +16,7 @@ class ProfilMahasiswaResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'Profil Mahasiswa';
 

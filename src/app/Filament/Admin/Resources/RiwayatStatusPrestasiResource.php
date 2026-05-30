@@ -16,7 +16,7 @@ class RiwayatStatusPrestasiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'Riwayat Status';
 

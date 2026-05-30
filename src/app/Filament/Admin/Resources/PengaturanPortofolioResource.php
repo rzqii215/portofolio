@@ -18,7 +18,7 @@ class PengaturanPortofolioResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
 
-    protected static ?string $navigationGroup = 'E-Portfolio';
+    protected static ?string $navigationGroup = 'E-Portofolio';
 
     protected static ?string $navigationLabel = 'Pengaturan Portofolio';
 

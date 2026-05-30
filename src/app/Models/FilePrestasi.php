@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Prestasi;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FilePrestasi extends Model
 {
-    protected $table = 'file_prestasis';
+    use HasFactory;
 
     protected $fillable = [
         'prestasi_id',
@@ -19,6 +21,6 @@ class FilePrestasi extends Model
 
     public function prestasi(): BelongsTo
     {
-        return $this->belongsTo(Prestasi::class, 'prestasi_id');
+        return $this->belongsTo(Prestasi::class);
     }
 }
